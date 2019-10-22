@@ -6,14 +6,17 @@ Date : 21 oct 2019
 This script is used to process data available at https://zenodo.org/record/2654726#.Xa2_C_fTU5k
 Grand-St-Bernard Deployment
 '''
-import os
+import os,shutil
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import datetime
 
 class Data :
     def __init__(self) :
         self.dataDir = os.path.join(os.getcwd(),'data')
+        self.simulationStartTime = datetime.datetime.now()
+        self.upSampledDir = 'sampledData'
 
 
     def visualizeRandomStation(self,nodeNum=None):
@@ -99,7 +102,10 @@ class Data :
             parser = lambda date: pd.datetime.strptime(date, '%d%b%Y')
             #nrows is used to limit the number of rows to read - we are reading only 10k rows since author only takes 10k in his publication
             df = pd.read_csv(f,parse_dates=dateCols,sep=' ',header=None,nrows=10000)
-        df['date'] = pd.to_datetime(df['1_2_3_4_5_6'], format="%Y %m %d %H %M %S",)
+
+        # date i.e timestamp for stations is not same for all. so instead of using that time stamp we are going to create a datetime
+        # frame whenever a user runs simulation - so we will delete this datetime timestamp 
+        df['date'] = pd.to_datetime(df['1_2_3_4_5_6'], format="%Y %m %d %H %M %S")
         # print(df['date'])
         #remove date time colums to keep formatted date
         del df['1_2_3_4_5_6']
@@ -119,13 +125,47 @@ class Data :
         print('original data frame shape is {0} after resamping its shape is {1}'.format(df.shape,newdf.shape))
         # print(newdf.shape)
         return newdf
+
+    def processData(self,samplingDuration) :
+        # this function will get the only required 10k sensor readings (aTemp,rTemp,rHumi,wSpeed) without date time
+        # add datetime for those readings and upsample that data and store it in a file in destinationDir
+        # colums   8        9       11      16     
+        # data   aTemp    rTemp    rHumi   wSpeed
+
+        #check if destination exist - if it is already there remove it and create new
+        dirToSave = os.path.join(os.getcwd(),self.upSampledDir)
+        if os.path.isdir(dirToSave) == True :
+            shutil.rmtree(dirToSave)
+        os.mkdir(dirToSave)
+
+        nrows = 10000 #no of rows to consider for simulation
+        allFiles = os.listdir(self.dataDir)
+        #create a timeindex with frequency of 2 minutes
+        timeIndex = pd.date_range(start=self.simulationStartTime, periods=nrows, freq='2T')
+        # print(timeIndex)
+        for fileName in allFiles :
+            with open (os.path.join(self.dataDir,fileName)) as f :
+                df = pd.read_csv(f,sep=' ',header=None,nrows=nrows,usecols=[8,9,11,16])
+                df['date'] = timeIndex
+                df.set_index('date', inplace=True) #set the timeindex to starting - used for indexing and visualization
+                # print(df.head)
+                # we are upsampling to sampling duration by intially filling them with na and replacing them with interpolation
+                upSampledDf = df.resample(samplingDuration).fillna('ffill').interpolate(method='time')
+                # print(upSampledDf.head())
+                print('{} with size {} is upsampled into {}'.format(fileName,df.shape,upSampledDf.shape))
+                upSampledDf.to_csv(os.path.join(os.getcwd(),self.upSampledDir,fileName))
+                return
     
     def upSampleDataAndSaveIt(self,directoryToSave,samplingDuration):
         allFiles = os.listdir(self.dataDir)
         for fileName in allFiles :
             df = self.upSampleData(fileName,samplingDuration)
             df.to_csv(os.path.join(os.getcwd(),directoryToSave,fileName))
-        
+    
+    def getSensorReading(self,stationId,timeStamp) :
+        with open(os.path.join(os.getcwd(),self.upSampledDir,str(stationId)+'.txt')) as f :
+            data = pd.read_csv(f)
+        print(data.loc[timeStamp.strftime("%Y-%m-%d %H:%M:%S")])
         
 
 def getDataBasedOnIndex(data,index) :
@@ -139,7 +179,11 @@ if __name__ == '__main__' :
     # data.visualizeRandomStation(nodeNum=10)
     # data.visualizeSingleFeature('aTemp')
     # data.upSampleData('20.txt')
-    data.upSampleDataAndSaveIt('resampledData','1S')
+    # data.upSampleDataAndSaveIt('resampledData','1S')
+    data.processData('1S')
+    tDiff = data.simulationStartTime + datetime.timedelta(seconds=2353)
+    data.getSensorReading(1,tDiff)
+
 
 
         
