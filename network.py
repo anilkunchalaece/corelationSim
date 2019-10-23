@@ -28,7 +28,7 @@ class Network:
         nodeList = list() #this will hold all node objects
         for nodeNum in range(self.numberOfNodes) :
             # index is used as nodeId
-            nodeList.append(Node(xPos[nodeNum],yPos[nodeNum],self.nodeInitEnergy,self.nodeSamplingRate,nodeId))
+            nodeList.append(Node(xPos[nodeNum],yPos[nodeNum],self.nodeInitEnergy,self.nodeSamplingRate,nodeNum))
         
         return nodeList
 
@@ -44,6 +44,10 @@ class Network:
 
 
 if __name__ == '__main__' :
-    net = Network(23,50,10,10)
+    numberOfNodes = 23
+    gridSize = 100
+    nodeInitEnergy = 10
+    nodeSamplingRate = 10
+    net = Network(numberOfNodes,gridSize,nodeInitEnergy,nodeSamplingRate)
     randNet = net.generateRandomNetwork()
     net.plotNetwork(randNet)

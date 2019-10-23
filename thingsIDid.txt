@@ -1,2 +1,5 @@
 1. create a new date time -> whenever user runs simulation, it runs based on current time
 2. Upsample data for every second. used pandas interpolation - it is just copying all the new timestamps - do we need more than that ?
+3. Centralized architecture - may be later can be extended for distributed one 
+4. ignoring transient energy specified in energy consumption. since with variable sampling rate , duty cycle is bit tricky concept and we dont need it now
+

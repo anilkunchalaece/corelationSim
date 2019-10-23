@@ -8,7 +8,7 @@ This is the base class for node - used to define nodes and their properties
 
 class Node :
     def __init__(self,xPosition,yPoistion,initEnergy,samplingRate,nodeId):
-        self.nodeId
+        self.nodeId = nodeId
         self.xPos = xPosition
         self.yPos = yPoistion
         self.energy = initEnergy
@@ -27,6 +27,7 @@ class Node :
     def updateSamplingRate(self) :
         # update sampling rate based on correlation
         # TODO
+        self.samplingRate = self.samplingRate
 
     def readSensorData(self) :
         #this function is used to emulate the sensor readings from the node
