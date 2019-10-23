@@ -1,0 +1,2 @@
+1. create a new date time -> whenever user runs simulation, it runs based on current time
+2. Upsample data for every second. used pandas interpolation - it is just copying all the new timestamps - do we need more than that ?

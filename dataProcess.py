@@ -164,8 +164,11 @@ class Data :
     
     def getSensorReading(self,stationId,timeStamp) :
         with open(os.path.join(os.getcwd(),self.upSampledDir,str(stationId)+'.txt')) as f :
-            data = pd.read_csv(f)
+            data = pd.read_csv(f,parse_dates=True,index_col='date')
+        # print(data)
+        # data.date = pd.to_datetime(data.date)
         print(data.loc[timeStamp.strftime("%Y-%m-%d %H:%M:%S")])
+        # print(data.loc[1])
         
 
 def getDataBasedOnIndex(data,index) :
@@ -182,7 +185,7 @@ if __name__ == '__main__' :
     # data.upSampleDataAndSaveIt('resampledData','1S')
     data.processData('1S')
     tDiff = data.simulationStartTime + datetime.timedelta(seconds=2353)
-    data.getSensorReading(1,tDiff)
+    data.getSensorReading(10,tDiff)
 
 
 
