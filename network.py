@@ -7,7 +7,7 @@ This is the base class for network - used to generate network
 '''
 import numpy as np 
 import matplotlib.pyplot as plt
-
+import json,os
 from node import Node
 
 class Network:
@@ -17,14 +17,41 @@ class Network:
         self.nodeInitEnergy = nodeInitEnergy
         self.nodeSamplingRate = nodeSamplingRate
 
+
+    def generateRandomCoordinates(self):
+        """
+        This function will generate random coordinates and dump them into the file named 'prevNodes.json'
+        """
+        xPos =np.random.randint(self.gridSize,size=self.numberOfNodes).tolist()
+        yPos = np.random.randint(self.gridSize,size=self.numberOfNodes).tolist()
+        with open('prevNodes.json','w') as f :
+            json.dump({
+                'xPos' : xPos,
+                'yPos' : yPos
+            },f)
+        return [xPos,yPos]         
     
-    def generateRandomNetwork(self):
+    def generateRandomNetwork(self,usePrevNodes):
         '''
         It will generate nodes with random placements using size value
         '''
-        xPos = np.random.randint(self.gridSize,size=self.numberOfNodes)
-        yPos = np.random.randint(self.gridSize,size=self.numberOfNodes)
-        
+        if usePrevNodes == True :
+            if os.path.isfile('prevNodes.json') :
+                with open('prevNodes.json') as f :
+                    nodeData = json.load(f)
+                    xPos = nodeData['xPos']
+                    yPos = nodeData['yPos']
+            else :
+                print('PrevNodes.json files does not exist, so creating and adding nodes to it')
+                xPos,yPos = self.generateRandomCoordinates()
+        else :
+            print('generating the random coorinates for new simulation')
+            xPos,yPos = self.generateRandomCoordinates()
+
+        # nodePos= np.random.rand(2,self.numberOfNodes)*self.gridSize
+        # # print(nodePos)
+        # xPos = nodePos[0]
+        # yPos = nodePos[1]
         nodeList = list() #this will hold all node objects
         for nodeNum in range(self.numberOfNodes) :
             # index is used as nodeId
@@ -39,7 +66,7 @@ class Network:
         '''
         plt.scatter([n.xPos for n in nodeList],[n.yPos for n in nodeList],marker='o',s=80)
         #consider sink node / base station location is middle of grid
-        plt.scatter(self.gridSize*1.5,self.gridSize/2,marker=(5, 0), s=100)
+        plt.scatter(self.gridSize*0.5,self.gridSize*0.5,marker=(5, 0), s=100)
         plt.show()
 
 
@@ -49,5 +76,5 @@ if __name__ == '__main__' :
     nodeInitEnergy = 10
     nodeSamplingRate = 10
     net = Network(numberOfNodes,gridSize,nodeInitEnergy,nodeSamplingRate)
-    randNet = net.generateRandomNetwork()
+    randNet = net.generateRandomNetwork(True)
     net.plotNetwork(randNet)
