@@ -154,7 +154,7 @@ class Data :
                 # print(upSampledDf.head())
                 print('{} with size {} is upsampled into {}'.format(fileName,df.shape,upSampledDf.shape))
                 upSampledDf.to_csv(os.path.join(os.getcwd(),self.upSampledDir,fileName))
-                return
+        print('data is upsampled and saved in dir {}'.format(self.upSampledDir))
     
     def upSampleDataAndSaveIt(self,directoryToSave,samplingDuration):
         allFiles = os.listdir(self.dataDir)
@@ -169,7 +169,18 @@ class Data :
         # data.date = pd.to_datetime(data.date)
         print(data.loc[timeStamp.strftime("%Y-%m-%d %H:%M:%S")])
         # print(data.loc[1])
-        
+    
+
+    def loadSensorDataForSimulation(self,samplingRate) :
+        self.processData(samplingRate)
+        sensorData = dict()
+        for fileName in os.listdir(self.upSampledDir) :
+            with open(os.path.join(os.getcwd(),self.upSampledDir,fileName)) as f :
+                data = pd.read_csv(f,parse_dates=True,index_col='date')
+            sensorData[fileName.replace('.txt','')] = data
+        return sensorData        
+
+
 
 def getDataBasedOnIndex(data,index) :
     return [float(line.split()[index]) for line in data]
@@ -183,9 +194,11 @@ if __name__ == '__main__' :
     # data.visualizeSingleFeature('aTemp')
     # data.upSampleData('20.txt')
     # data.upSampleDataAndSaveIt('resampledData','1S')
-    data.processData('1S')
-    tDiff = data.simulationStartTime + datetime.timedelta(seconds=2353)
-    data.getSensorReading(10,tDiff)
+    # data.processData('1S')
+    # tDiff = data.simulationStartTime + datetime.timedelta(seconds=2353)
+    # data.getSensorReading(10,tDiff)
+    sData = data.loadSensorDataForSimulation('1S')
+    print(sData)
 
 
 

@@ -13,7 +13,9 @@ class Energy :
     
     def energyConsumptionHalgamuge(self) :
         #All these constants are shamelessly copied from refered paper
-        b = 2 # 2kb Transmit packet size
+        # for now assuming number of bits are constants - later need to change it with channel attributes
+        # Sensing energy is calculated for each round , so we need to specify maximum samples we take for round to calculate 
+        b = 50 # 2kb Transmit packet size
         N_cyc = 0.97E6 # number of clock cycles per task 
         C_avg = 22E-12 # Avg capacitance witch per cycle
         V_sup = 2.7 # Supply voltage to sensor
@@ -24,6 +26,7 @@ class Energy :
         V_t = 0.2 # thermal voltage
         E_elec = 50E-9 # Energy dissipation : electronics Joules/bit
         E_amp = 100E-12 # Energy dissipation : power amplifier J/bit/m2
+        E_ini = 1E-6 # energy for starting up radio in joules
         T_tranON = 2450E-6 # Time duration sleep -> idle
         T_tranOFF = 250E-6 # Time duration idle -> sleep 
         I_A = 8E-3 # Current: wake up mode
@@ -31,8 +34,8 @@ class Energy :
         T_A = 1E-3 # Active time
         T_S = 299E-3 # Sleeping time
         T_tr = 300E-3 # Time between consecutive packets
-        T_sens = 0.5E-3 #Time duration : sensor node sensing
-        I_sens = 25E-3 # Current : Sensing activity
+        T_sens = 0.05E-4 #Time duration : sensor node sensing
+        I_sens = 0.7E-3 # Current : Sensing activity
         I_write = 18.4E-3 #Current : Flash writing 1 byte data
         I_read = 6.2E-3 # Current : Flash reading 1 byte of data
         T_write = 12.9E-3 # Time duration : Flash writing
@@ -43,12 +46,12 @@ class Energy :
 
         EnergySensing = b * V_sup * I_sens * T_sens
         EnergyDataLogging = b * V_sup * ((I_write*T_write) + (I_read * T_read))
-        EnergyTransmit = b*E_elec + b * (d^4) * E_amp # check 'd' -> distance
+        EnergyTransmit = b*E_elec + b * (d^2) * E_amp + E_ini # check 'd' -> distance
 
         CN = (T_tranON + T_A +T_tranOFF) / (T_tranON+ T_A + T_tranOFF + T_S) # Duty cycle for sensor node
-        EnergyTransient = T_A*V_sup *(CN*I_A + (1-CN) * I_S)#
+        EnergyTransient = T_A*V_sup *(CN*I_A + (1-CN) * I_S)
 
-        print('EnergySensing {0}  EnergyDataLogging {1} EnergyTransmit{2}'.format(EnergySensing,EnergyDataLogging,EnergyTransmit))
+        print('EnergySensing {0} EnergyTransmit{1}'.format(EnergySensing,EnergyTransmit))
 
         totalEnergyConsumed = EnergySensing + EnergyDataLogging + EnergyTransmit # + EnergyTransient #for now lets ignore this - cause duty cycle may change with sampling time
 
@@ -56,5 +59,5 @@ class Energy :
          
 if __name__ == '__main__' :
     e = Energy()
-    TE = e.energyConsumption()
+    TE = e.energyConsumptionHalgamuge()
     print(TE)

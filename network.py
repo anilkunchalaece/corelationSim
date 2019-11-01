@@ -48,6 +48,12 @@ if __name__ == '__main__' :
     gridSize = 100
     nodeInitEnergy = 10
     nodeSamplingRate = 10
+    # 
+    # random distribution of nodes uniform, gaussion, poisson with a reason
+    # cluster head location -> minimum distance from all nodes
+    # dont change node locations , provide option to use previous network placement
+    # send paper with all lines where we need clarification
+    # remove project from github
     net = Network(numberOfNodes,gridSize,nodeInitEnergy,nodeSamplingRate)
     randNet = net.generateRandomNetwork()
     net.plotNetwork(randNet)
