@@ -13,7 +13,7 @@ class Node :
         self.yPos = yPoistion
         self.energy = initEnergy
         self.cluster = 0 #cluster node belong to -> initially 0
-        self.samplingRate = 10 # TODO is it array [seperate for each sensor] or single value [same for all sensors] ?
+        self.samplingRate =samplingRate  # TODO is it array [seperate for each sensor] or single value [same for all sensors] ?
     
     def getEnergy(self) :
         #get residue energy of the node
