@@ -3,3 +3,8 @@
 3. Centralized architecture - may be later can be extended for distributed one 
 4. ignoring transient energy specified in energy consumption. since with variable sampling rate , duty cycle is bit tricky concept and we dont need it now
 
+Things to Solve
+1. Getting NAN as correlation -> need to avoid it 
+2. Sampling rate exceeding totalRound duration / getting only  One sample per round -> so it is making duplicates for all the values 
+   -> need to restrict the max sampling rate it can reach
+   
