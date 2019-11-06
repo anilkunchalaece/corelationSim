@@ -9,7 +9,7 @@ from collections import Counter
 
 configFileLoc = os.path.join(os.getcwd(), 'config.json')
 totalSimulationDuration = 10000 * 2 * 60# in seconds -> 10k samples with 2 min sample time
-roundTime = 60*60*24 #in seconds [ 1 hour ]
+roundTime = 60*60*10 #in seconds [ 1 hour ]
 
 USE_PREV_NODES = False
 
@@ -22,34 +22,36 @@ def pearsonCorrelation(X, Y):
    ''' Compute Pearson Correlation Coefficient. '''
     # Compute correlation matrix
    
-   print(X)
-   print("X length is {}".format(len(X)))
-   print(Y)
-   print("Y length is {}".format(len(Y)))
-   
-   
-   corr_mat = np.corrcoef(X, Y)
-   print("########### Correlation mat is {}".format(corr_mat[0,1]))
-   # Return entry [0,1]
-   return corr_mat[0,1]
-
-   #convert X and Y to numpy arrays
-#    X = np.array(X)
-#    Y = np.array(Y)
-   
 #    print(X)
+# #    print("X length is {}".format(len(X)))
 #    print(Y)
-#    print("##########################")
+# #    print("Y length is {}".format(len(Y)))
+   
+   
+#    corr_mat = np.corrcoef(X, Y)
+#    print("########### Correlation mat is {}".format(corr_mat[0,1]))
+#    # Return entry [0,1]
+#    return corr_mat[0,1]
+
+#    convert X and Y to numpy arrays
+   X = np.array(X,dtype=np.double)
+   Y = np.array(Y,dtype=np.double)
+   
+   print(X)
+   print(Y)
+   print("##########################")
 
 
-#    # Normalise X and Y
-#    X -= X.mean(0)
-#    Y -= Y.mean(0)
-#    # Standardise X and Y
-#    X /= X.std(0)
-#    Y /= Y.std(0)
-#    # Compute mean product
-#    return np.mean(X*Y)
+   # Normalise X and Y
+   X -= X.mean(0)
+   Y -= Y.mean(0)
+   # Standardise X and Y
+   X /= X.std(0)
+   Y /= Y.std(0)
+   # Compute mean product
+   corr = np.mean(X*Y)
+   print("########### Correlation mat is {}".format(corr))
+   return corr
 # def pearson_r(x, y):
 
 
@@ -66,6 +68,7 @@ def calculateCorelation(mat_M) :
             if i != j : #we dont need to correlation when i == j
             # print(i,j)
                 cnt = cnt + 1
+                print("node i {} node j {} ".format(i,j))
                 corr = pearsonCorrelation(mat_M[i],mat_M[j])
                 corr_list.append(corr) # corelation of each i compared with j
                 index_list.append(j) # index of j
@@ -144,7 +147,14 @@ def calculateMatrix_M_NAN(mat_m,m_samplingRate) :
 
     return m_nan,m_replaced
 
-            
+#this function is used to constain the sampling rate so for each round we get atleast two samples
+def constrainSamplingRate(samplingRate,rTime) :
+    if rTime / samplingRate < 2 :
+        return rTime / 2.1
+    else :
+        return samplingRate
+
+
 
 #get nodeObj based on nodeId
 def getNodeObj(nodeId,nodeObjList) :
@@ -167,7 +177,7 @@ randNet = net.generateRandomNetwork(usePrevNodes=USE_PREV_NODES)
 # net.plotNetwork(randNet)
 
 ###### Simulation starts from HERE #########
-numberOfRounds = int(totalSimulationDuration / roundTime)
+numberOfRounds = int(totalSimulationDuration / roundTime) - 2
 
 print("total number of rounds are {0} number of samples per round are ".format(numberOfRounds))
 
@@ -186,15 +196,16 @@ for roundIndex in list(range(numberOfRounds)):
         numberOfSamplesPerRound = int(roundTime / nodeNumber.samplingRate)
 
         #if numberOfSamplesPerRound < 2 make it 2 -> we need atleast 2 to make one sample
-        if numberOfSamplesPerRound < 2 : numberOfSamplesPerRound = 2
-
+        # to remove zero samples
+        if numberOfSamplesPerRound <= 2 : numberOfSamplesPerRound = 3
+        print("number of samples per round {}".format(numberOfSamplesPerRound))
         # print("node number {}".format(nodeNumber.nodeId))
         temp_l = list()
         temp_t = list()
         for eachSampleTime in list(range(1,numberOfSamplesPerRound)) :
             nextSampleTime = (roundIndex * roundTime) + eachSampleTime * nodeNumber.samplingRate
             tDiff = d.simulationStartTime + datetime.timedelta(seconds=nextSampleTime)
-            temp_l.append(sensorData[str(nodeNumber.nodeId+1)].loc[tDiff.strftime("%Y-%m-%d %H:%M")].tolist()[0])
+            temp_l.append(sensorData[str(nodeNumber.nodeId+1)].loc[tDiff.strftime("%Y-%m-%d %H:%M")].tolist()[1])
             temp_t.append(nextSampleTime)
             # if eachSampleTime == 1 :
             #     print(nextSampleTime)
@@ -256,6 +267,11 @@ for roundIndex in list(range(numberOfRounds)):
         current_node = n_j[0]
         match_node = corr_table[current_node]['j']
         match_corr = corr_table[current_node]['mc']
+
+        #if correlation is nan, set it to 0. so sampling rate wont have any effect
+        # TODO -> need to check whether this is correct approach or not
+        if np.isnan(match_corr) :
+             match_corr = 0
         
 
         nodeObj = getNodeObj(current_node,randNet)
@@ -266,21 +282,27 @@ for roundIndex in list(range(numberOfRounds)):
             # nodeObj.samplingRate = nodeObj.samplingRate + nodeObj.samplingRate * (1-match_corr)
             nodeObj.samplingRate = nodeObj.samplingRate * (1+match_corr)
             sampling_decided.append(current_node)
-            print(" sampling already not decided old sampling rate is {} corr is {} new sampling rate is {} ".format(oldSamplingRate,match_corr,nodeObj.samplingRate))
+            nodeObj.samplingRate = constrainSamplingRate(nodeObj.samplingRate,roundTime) #constrin sampling rate 
+            print(" sampling already not decided old sampling rate is {} corr is {} new sampling rate is {} roundtime is {} roundIndex is {} ".format(oldSamplingRate,match_corr,nodeObj.samplingRate,roundTime,roundIndex))
         else :
             match_corr = 1 - match_corr
             # nodeObj.samplingRate = nodeObj.samplingRate + nodeObj.samplingRate * (1-match_corr)
             nodeObj.samplingRate = nodeObj.samplingRate * (1+match_corr)
-            print(" sampling is decided old sampling rate is {} corr is {} new sampling rate is {} ".format(oldSamplingRate,match_corr,nodeObj.samplingRate))
-    # print(sampling_decided)
+            nodeObj.samplingRate = constrainSamplingRate(nodeObj.samplingRate,roundTime) #constrin sampling rate 
+            print(" sampling is decided old sampling rate is {} corr is {} new sampling rate is {} roundtime is {} roundIndex is {} ".format(oldSamplingRate,match_corr,nodeObj.samplingRate,roundTime,roundIndex))
+    # print(sampling_decided)  
+
 
     #update correaltion for remaining nodes
     for n_i in corr_table :
         if n_i not in sampling_decided :
             current_node = n_i 
             nodeObj = getNodeObj(current_node,randNet)
+            oldSamplingRate = nodeObj.samplingRate
             # nodeObj.samplingRate = nodeObj.samplingRate + nodeObj.samplingRate * (1-match_corr)
             nodeObj.samplingRate = nodeObj.samplingRate * (1+match_corr)
+            nodeObj.samplingRate = constrainSamplingRate(nodeObj.samplingRate,roundTime) #constrin sampling rate
+            print(" sampling is decided old sampling rate is {} corr is {} new sampling rate is {} roundtime is {} roundIndex is {} ".format(oldSamplingRate,match_corr,nodeObj.samplingRate,roundTime,roundIndex))
     # break
         
         

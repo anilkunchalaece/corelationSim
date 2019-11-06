@@ -8,3 +8,8 @@ Things to Solve
 2. Sampling rate exceeding totalRound duration / getting only  One sample per round -> so it is making duplicates for all the values 
    -> need to restrict the max sampling rate it can reach
    
+Data is not varying for some duration giving us NAN
+only getting one sample per node -> need atleast two
+
+when I'm getting NAN , I'm just replacing that with 0 -> assuming that there is no linear correlation between two nodes
+restricted number of samples to two
