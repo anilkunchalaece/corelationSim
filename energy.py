@@ -11,11 +11,14 @@ class Energy :
     def __init__(self):
         self.initEnergy = 2
     
-    def energyConsumptionHalgamuge(self) :
+    def energyConsumptionHalgamuge(self,numberOfBitsPerSample,numberOfSamples) :
         #All these constants are shamelessly copied from refered paper
         # for now assuming number of bits are constants - later need to change it with channel attributes
         # Sensing energy is calculated for each round , so we need to specify maximum samples we take for round to calculate 
-        b = 50 # 2kb Transmit packet size
+        # currently using only sampling and transmit energy
+        #b = 50 # 2kb Transmit packet size
+        tr_factor = 1.5 # weight factor used to add extrabits required for communication TODO- need to replace with edmond channel model
+        b_transmit = numberOfBitsPerSample * numberOfSamples * tr_factor
         N_cyc = 0.97E6 # number of clock cycles per task 
         C_avg = 22E-12 # Avg capacitance witch per cycle
         V_sup = 2.7 # Supply voltage to sensor
@@ -44,18 +47,19 @@ class Energy :
 
         d = 40 # TODO distance from from node to base station. for now consider it as constant. later we have to calculate distance base on node and base station location
 
-        EnergySensing = b * V_sup * I_sens * T_sens
-        EnergyDataLogging = b * V_sup * ((I_write*T_write) + (I_read * T_read))
-        EnergyTransmit = b*E_elec + b * (d^2) * E_amp + E_ini # check 'd' -> distance
+        EnergySensing = numberOfBitsPerSample * V_sup * I_sens * T_sens
+        # EnergyDataLogging = b * V_sup * ((I_write*T_write) + (I_read * T_read))
+        EnergyTransmit = b_transmit*E_elec + b * (d^2) * E_amp + E_ini # check 'd' -> distance
 
-        CN = (T_tranON + T_A +T_tranOFF) / (T_tranON+ T_A + T_tranOFF + T_S) # Duty cycle for sensor node
-        EnergyTransient = T_A*V_sup *(CN*I_A + (1-CN) * I_S)
+        # CN = (T_tranON + T_A +T_tranOFF) / (T_tranON+ T_A + T_tranOFF + T_S) # Duty cycle for sensor node
+        # EnergyTransient = T_A*V_sup *(CN*I_A + (1-CN) * I_S)
 
-        print('EnergySensing {0} EnergyTransmit{1}'.format(EnergySensing,EnergyTransmit))
+        # print('EnergySensing {0} EnergyTransmit{1}'.format(EnergySensing,EnergyTransmit))
 
-        totalEnergyConsumed = EnergySensing + EnergyDataLogging + EnergyTransmit # + EnergyTransient #for now lets ignore this - cause duty cycle may change with sampling time
+        # totalEnergyConsumed = EnergySensing + EnergyDataLogging + EnergyTransmit # + EnergyTransient #for now lets ignore this - cause duty cycle may change with sampling time
+        EnergySensingPerRound = EnergySensing * numberOfSamples
 
-        return totalEnergyConsumed
+        return EnergySensingPerRound,EnergyTransmit
          
 if __name__ == '__main__' :
     e = Energy()
