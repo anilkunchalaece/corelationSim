@@ -152,9 +152,9 @@ class Data :
                 # we are upsampling to sampling duration by intially filling them with na and replacing them with interpolation
                 upSampledDf = df.resample(samplingDuration).fillna('ffill').interpolate(method='time')
                 # print(upSampledDf.head())
-                print('{} with size {} is upsampled into {}'.format(fileName,df.shape,upSampledDf.shape))
+                # print('{} with size {} is upsampled into {}'.format(fileName,df.shape,upSampledDf.shape))
                 upSampledDf.to_csv(os.path.join(os.getcwd(),self.upSampledDir,fileName))
-        print('data is upsampled and saved in dir {}'.format(self.upSampledDir))
+        # print('data is upsampled and saved in dir {}'.format(self.upSampledDir))
     
     def upSampleDataAndSaveIt(self,directoryToSave,samplingDuration):
         allFiles = os.listdir(self.dataDir)
@@ -167,7 +167,7 @@ class Data :
             data = pd.read_csv(f,parse_dates=True,index_col='date')
         # print(data)
         # data.date = pd.to_datetime(data.date)
-        print(data.loc[timeStamp.strftime("%Y-%m-%d %H:%M:%S")])
+        # print(data.loc[timeStamp.strftime("%Y-%m-%d %H:%M:%S")])
         # print(data.loc[1])
     
 
