@@ -9,9 +9,12 @@ from collections import Counter
 
 configFileLoc = os.path.join(os.getcwd(), 'config.json')
 totalSimulationDuration = 10000 * 2 * 60# in seconds -> 10k samples with 2 min sample time
-roundTime = 60*60*10 #in seconds [ 1 hour ]
+roundTime = 60*60 #in seconds [ 1 hour ]
+nodeInitSamplingRate = 20*60 # in sec
+USE_PREV_NODES = True
+NUMBER_OF_BITS_PER_SAMPLE = 5*8 #5 bytes
+RESULTS_FILE_NAME = "result-{}-{}.json".format(nodeInitSamplingRate,roundTime)
 
-USE_PREV_NODES = False
 
 def loadConfig() :
     with open(configFileLoc) as f :
@@ -172,8 +175,9 @@ sensorData = d.loadSensorDataForSimulation(conf['nodeUpSamplingRate'])
 
 ###### Genearate Network ##########
 print("###### Generating the network using uniform distribution ")
-net = Network(conf['numberOfNodes'],conf['gridSize'],conf['nodeInitEnergy'],conf['nodeInitSamplingRate'])
+net = Network(conf['numberOfNodes'],conf['gridSize'],conf['nodeInitEnergy'],nodeInitSamplingRate)
 randNet = net.generateRandomNetwork(usePrevNodes=USE_PREV_NODES)
+e = Energy()
 # net.plotNetwork(randNet)
 
 ###### Simulation starts from HERE #########
@@ -182,6 +186,7 @@ numberOfRounds = int(totalSimulationDuration / roundTime) - 2
 print("total number of rounds are {0} number of samples per round are ".format(numberOfRounds))
 
 # matrix_M = []
+resultsDict = dict()
 
 for roundIndex in list(range(numberOfRounds)):
     # print("round {0}".format(roundIndex))
@@ -191,7 +196,7 @@ for roundIndex in list(range(numberOfRounds)):
     matrix_M_replaced = []
 
     m_samplingRate = []
-
+    nodeData = dict()
     for nodeNumber in randNet :
         numberOfSamplesPerRound = int(roundTime / nodeNumber.samplingRate)
 
@@ -202,6 +207,7 @@ for roundIndex in list(range(numberOfRounds)):
         # print("node number {}".format(nodeNumber.nodeId))
         temp_l = list()
         temp_t = list()
+        
         for eachSampleTime in list(range(1,numberOfSamplesPerRound)) :
             nextSampleTime = (roundIndex * roundTime) + eachSampleTime * nodeNumber.samplingRate
             tDiff = d.simulationStartTime + datetime.timedelta(seconds=nextSampleTime)
@@ -209,12 +215,28 @@ for roundIndex in list(range(numberOfRounds)):
             temp_t.append(nextSampleTime)
             # if eachSampleTime == 1 :
             #     print(nextSampleTime)
-        
-        print('for node {} sampling rate {} number of samples are {}'.format(nodeNumber.nodeId,nodeNumber.samplingRate,len(temp_l)))
+        #update the energy of node
+        sensingEnergy,transmitEnergy = e.energyConsumptionHalgamuge(NUMBER_OF_BITS_PER_SAMPLE,numberOfSamplesPerRound)
+        totalEnergy = sensingEnergy + transmitEnergy
+        nodeNumber.updateEnergy(totalEnergy)
 
+        #get the node data for this round
+        nodeData[nodeNumber.nodeId] = {
+            'noOfSamples' : numberOfSamplesPerRound,
+            'samplingRate' : nodeNumber.samplingRate,
+            'sensingEnergy' : sensingEnergy, #energy consumed for sensor sensing and sampling per round
+            'transmitEnergy' : transmitEnergy, #energy consumed for trasitting the data per round
+            'remainingEnergy' : nodeNumber.energy, # remaining energy for node
+        }
+        print('for node {} sampling rate {} number of samples are {}'.format(nodeNumber.nodeId,nodeNumber.samplingRate,len(temp_l)))
         matrix_M.append(temp_l)
         m_samplingRate.append(temp_t)
+
+
     
+    #add all nodeData to resultDict
+    resultsDict[roundIndex] = nodeData 
+
     # Step 2: Get the correlation matrix 
     # print(matrix_M)
     
@@ -304,7 +326,11 @@ for roundIndex in list(range(numberOfRounds)):
             nodeObj.samplingRate = constrainSamplingRate(nodeObj.samplingRate,roundTime) #constrin sampling rate
             print(" sampling is decided old sampling rate is {} corr is {} new sampling rate is {} roundtime is {} roundIndex is {} ".format(oldSamplingRate,match_corr,nodeObj.samplingRate,roundTime,roundIndex))
     # break
-        
+resultsDict['roundTime'] = roundTime
+resultsDict['numberOfRounds'] = numberOfRounds
+with open(os.path.join('results',RESULTS_FILE_NAME),'w') as f :
+    json.dump(resultsDict,f) 
+
         
 
 

@@ -19,10 +19,10 @@ class Node :
         #get residue energy of the node
         return self.energy
     
-    def updateEnergy(self) :
+    def updateEnergy(self,energyConsumed) :
         #update the energy of the node i.e after each transmission or sensor sampling we need to update the energy
         # TODO
-        self.energy = self.energy
+        self.energy = self.energy - energyConsumed
     
     def updateSamplingRate(self) :
         # update sampling rate based on correlation

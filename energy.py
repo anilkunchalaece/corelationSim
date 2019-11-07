@@ -29,7 +29,7 @@ class Energy :
         V_t = 0.2 # thermal voltage
         E_elec = 50E-9 # Energy dissipation : electronics Joules/bit
         E_amp = 100E-12 # Energy dissipation : power amplifier J/bit/m2
-        E_ini = 1E-6 # energy for starting up radio in joules
+        E_ini = 1E-5 # energy for starting up radio in joules
         T_tranON = 2450E-6 # Time duration sleep -> idle
         T_tranOFF = 250E-6 # Time duration idle -> sleep 
         I_A = 8E-3 # Current: wake up mode
@@ -38,18 +38,18 @@ class Energy :
         T_S = 299E-3 # Sleeping time
         T_tr = 300E-3 # Time between consecutive packets
         T_sens = 0.05E-4 #Time duration : sensor node sensing
-        I_sens = 0.7E-3 # Current : Sensing activity
+        I_sens = 0.3E-3 # Current : Sensing activity
         I_write = 18.4E-3 #Current : Flash writing 1 byte data
         I_read = 6.2E-3 # Current : Flash reading 1 byte of data
         T_write = 12.9E-3 # Time duration : Flash writing
         T_read = 565E-6 # Time duration : flash reading
         E_actu = 0.02E-3 # Energy dissipation : actuation
 
-        d = 40 # TODO distance from from node to base station. for now consider it as constant. later we have to calculate distance base on node and base station location
+        d = 800 # TODO distance from from node to base station. for now consider it as constant. later we have to calculate distance base on node and base station location
 
         EnergySensing = numberOfBitsPerSample * V_sup * I_sens * T_sens
         # EnergyDataLogging = b * V_sup * ((I_write*T_write) + (I_read * T_read))
-        EnergyTransmit = b_transmit*E_elec + b * (d^2) * E_amp + E_ini # check 'd' -> distance
+        EnergyTransmit = (b_transmit*E_elec) + (b_transmit * (d^2) * E_amp) + E_ini # check 'd' -> distance
 
         # CN = (T_tranON + T_A +T_tranOFF) / (T_tranON+ T_A + T_tranOFF + T_S) # Duty cycle for sensor node
         # EnergyTransient = T_A*V_sup *(CN*I_A + (1-CN) * I_S)
@@ -59,9 +59,9 @@ class Energy :
         # totalEnergyConsumed = EnergySensing + EnergyDataLogging + EnergyTransmit # + EnergyTransient #for now lets ignore this - cause duty cycle may change with sampling time
         EnergySensingPerRound = EnergySensing * numberOfSamples
 
-        return EnergySensingPerRound,EnergyTransmit
+        return EnergySensingPerRound*100,EnergyTransmit*100
          
 if __name__ == '__main__' :
     e = Energy()
-    TE = e.energyConsumptionHalgamuge()
+    TE = e.energyConsumptionHalgamuge(5*8,10)
     print(TE)
