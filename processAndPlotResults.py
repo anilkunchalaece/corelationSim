@@ -7,13 +7,18 @@ nodeInitSamplingRateList  = [2,10,20] # in minutes
 import matplotlib.pyplot as plt
 def totalNumberOfSamplesPerRound(data,key):   
     samplesPerRound = []
+    nodeWiseSamples = []
     for round in data['rounds'] :
         totalSamples = 0
+        node_wise = []
         for node in round :
-            totalSamples = totalSamples + round[node][key]
+            nd_val = round[node][key]
+            node_wise.append(nd_val)
+            totalSamples = totalSamples + nd_val
         samplesPerRound.append(totalSamples)
+        nodeWiseSamples.append(node_wise)
     # print(sum(samplesPerRound))
-    return samplesPerRound,sum(samplesPerRound)
+    return samplesPerRound,sum(samplesPerRound),nodeWiseSamples
 
 def processData() :
     result = dict()
@@ -40,7 +45,8 @@ def processData() :
                 rd[key] =  {
                         'withSampling' : {
                             'roundWise' : withSampling[0],
-                            'total' : withSampling[1]
+                            'total' : withSampling[1],
+                            'nodeWise' : withSampling[2]
                         },
                         'withoutSampling' : {
                             'roundWise' : withoutSampling[0],
@@ -60,9 +66,10 @@ def plotGraphs() :
     objects = ('2M', '10M','20M')
     y_pos = np.arange(len(objects))
     E_values = []
-    S_values = []
+    NS_values = []
     E_values_NA = []
-    S_values_NA = []
+    NS_values_NA = []
+    SR_values = []
     totalNumberOfNodes = 23
 
     for val in data[36000] :
@@ -75,9 +82,18 @@ def plotGraphs() :
         E_values_NA.append((TE_NC+SE_NC)/totalNumberOfNodes)
 
         NS = val['noOfSamples']['withSampling']['total']
-        S_values.append(NS/totalNumberOfNodes)
+        NS_values.append(NS/totalNumberOfNodes)
         NS_NC = val['noOfSamples']['withoutSampling']['total']
-        S_values_NA.append(NS_NC/totalNumberOfNodes)
+        NS_values_NA.append(NS_NC/totalNumberOfNodes)
+
+        SR = val['samplingRate']['withSampling']['nodeWise']
+        SR_values.append(SR)
+
+    # print(SR_values[0])
+    node1_sampling_rate = [val[0] for val in SR_values[1]]
+    print(node1_sampling_rate)
+    plt.bar(np.arange(len(node1_sampling_rate)),node1_sampling_rate)
+    plt.show()
 
     plotBarWidth = 0.35
     plt.bar(y_pos, E_values,plotBarWidth,align='center',color='green')
@@ -99,7 +115,7 @@ def plotGraphs() :
     plt.show()
 
 
-    plt.bar(y_pos, S_values,plotBarWidth, align='center',color='green')
+    plt.bar(y_pos, NS_values,plotBarWidth, align='center',color='green')
     plt.xticks(y_pos, objects)
     plt.ylabel('Avearage Number of Samples')
     plt.xlabel('Sampling Rate')
@@ -107,8 +123,8 @@ def plotGraphs() :
     plt.savefig(os.path.join('plots','averageNumberOfSamples.png'))
     plt.show()
 
-    plt.bar(y_pos, S_values,plotBarWidth,align='center',color='green')
-    plt.bar(y_pos+plotBarWidth, S_values_NA, plotBarWidth, align='center',color='red')
+    plt.bar(y_pos, NS_values,plotBarWidth,align='center',color='green')
+    plt.bar(y_pos+plotBarWidth, NS_values_NA, plotBarWidth, align='center',color='red')
     plt.xticks(y_pos, objects)
     plt.ylabel('Average Number Of Samples')
     plt.xlabel('Sampling Rate')
