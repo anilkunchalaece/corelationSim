@@ -57,21 +57,65 @@ def plotGraphs() :
     data = processData()
     # print(data)
     #plot energy consumption for single round
-    objects = ('2M','2M-NC', '10M','10M-NC','20M','20M-NC')
+    objects = ('2M', '10M','20M')
     y_pos = np.arange(len(objects))
     E_values = []
-    for val in data[18000] :
+    S_values = []
+    E_values_NA = []
+    S_values_NA = []
+    totalNumberOfNodes = 23
+
+    for val in data[36000] :
         TE = val['transmitEnergy']['withSampling']['total']
         SE = val['sensingEnergy']['withSampling']['total']
-        E_values.append(TE+SE)
+        E_values.append((TE+SE)/totalNumberOfNodes)
+        
         TE_NC = val['transmitEnergy']['withoutSampling']['total']
         SE_NC = val['sensingEnergy']['withoutSampling']['total']
-        E_values.append(TE_NC+SE_NC)
-    plt.bar(y_pos, E_values, align='center', alpha=0.5)
+        E_values_NA.append((TE_NC+SE_NC)/totalNumberOfNodes)
+
+        NS = val['noOfSamples']['withSampling']['total']
+        S_values.append(NS/totalNumberOfNodes)
+        NS_NC = val['noOfSamples']['withoutSampling']['total']
+        S_values_NA.append(NS_NC/totalNumberOfNodes)
+
+    plotBarWidth = 0.35
+    plt.bar(y_pos, E_values,plotBarWidth,align='center',color='green')
     plt.xticks(y_pos, objects)
     plt.ylabel('Energy Consumption')
-    plt.title('Sampling Rate')
+    plt.xlabel('Sampling Rate')
+    plt.title('Average Energy Consumption vs Sampling rate')
+    plt.savefig(os.path.join('plots','averageEnergyConsumption.png'))
     plt.show()
+
+    plt.bar(y_pos, E_values,plotBarWidth,align='center',color='green')
+    plt.bar(y_pos+plotBarWidth, E_values_NA, plotBarWidth, align='center',color='red')
+    plt.xticks(y_pos, objects)
+    plt.ylabel('Avearge Energy Consumption')
+    plt.xlabel('Sampling Rate')
+    plt.title('Average Energy Consumption with and without Correlation')
+    plt.legend(['With Correlation','Without Correlation'])
+    plt.savefig(os.path.join('plots','energyConsumptionWithAndWithoutCorrelation.png'))
+    plt.show()
+
+
+    plt.bar(y_pos, S_values,plotBarWidth, align='center',color='green')
+    plt.xticks(y_pos, objects)
+    plt.ylabel('Avearage Number of Samples')
+    plt.xlabel('Sampling Rate')
+    plt.title('Average Number of Samples vs Sampling rate')
+    plt.savefig(os.path.join('plots','averageNumberOfSamples.png'))
+    plt.show()
+
+    plt.bar(y_pos, S_values,plotBarWidth,align='center',color='green')
+    plt.bar(y_pos+plotBarWidth, S_values_NA, plotBarWidth, align='center',color='red')
+    plt.xticks(y_pos, objects)
+    plt.ylabel('Average Number Of Samples')
+    plt.xlabel('Sampling Rate')
+    plt.title('Average Number of Samples with and without Correlation')
+    plt.legend(['With Correlation','Without Correlation'])
+    plt.savefig(os.path.join('plots','NoOfSamplesWithAndWithoutCorrelation.png'))
+    plt.show() 
 
 if __name__ == '__main__' :
     plotGraphs()
