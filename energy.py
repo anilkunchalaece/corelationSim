@@ -27,9 +27,9 @@ class Energy :
         n = 2 # path loss exponent
         I_o = 1.196E-3 # leakage current
         V_t = 0.2 # thermal voltage
-        E_elec = 50E-9 # Energy dissipation : electronics Joules/bit
+        E_elec = 2E-9 # Energy dissipation : electronics Joules/bit
         E_amp = 100E-12 # Energy dissipation : power amplifier J/bit/m2
-        E_ini = 1E-5 # energy for starting up radio in joules
+        E_ini = 0.5E-5 # energy for starting up radio in joules
         T_tranON = 2450E-6 # Time duration sleep -> idle
         T_tranOFF = 250E-6 # Time duration idle -> sleep 
         I_A = 8E-3 # Current: wake up mode
@@ -59,9 +59,14 @@ class Energy :
         # totalEnergyConsumed = EnergySensing + EnergyDataLogging + EnergyTransmit # + EnergyTransient #for now lets ignore this - cause duty cycle may change with sampling time
         EnergySensingPerRound = EnergySensing * numberOfSamples
 
-        return EnergySensingPerRound*100,EnergyTransmit*100
+        return EnergySensingPerRound*100,EnergyTransmit*1000
          
 if __name__ == '__main__' :
     e = Energy()
     TE = e.energyConsumptionHalgamuge(5*8,10)
+    TR_RATE = 250.0e3 #250Kbps
+    timeToTransmitData = 15*8/TR_RATE
+    P_TX = TE[1] * timeToTransmitData
     print(TE)
+    print(P_TX)
+    # print(timeToTransmitData)
