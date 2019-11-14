@@ -68,7 +68,9 @@ class Network:
         #consider sink node / base station location is middle of grid
         plt.scatter(self.gridSize*0.5,self.gridSize*0.5,marker=(5, 0), s=100)
         plt.show()
-
+    
+    def getBaseStationCoOrdinates(self) :
+        return (self.gridSize*0.5,self.gridSize*0.5)
 
 if __name__ == '__main__' :
     numberOfNodes = 23

@@ -8,10 +8,11 @@ based on paper - An estimation of sensor energy consumption M.N. Halgamuge, M.Zu
 '''
 
 class Energy :
-    def __init__(self):
+    def __init__(self,txRate):
         self.initEnergy = 2
+        self.txRate = txRate
     
-    def energyConsumptionHalgamuge(self,numberOfBitsPerSample,numberOfSamples) :
+    def energyConsumptionHalgamuge(self,numberOfBitsPerSample,numberOfSamples,dist) :
         #All these constants are shamelessly copied from refered paper
         # for now assuming number of bits are constants - later need to change it with channel attributes
         # Sensing energy is calculated for each round , so we need to specify maximum samples we take for round to calculate 
@@ -27,7 +28,7 @@ class Energy :
         n = 2 # path loss exponent
         I_o = 1.196E-3 # leakage current
         V_t = 0.2 # thermal voltage
-        E_elec = 2E-9 # Energy dissipation : electronics Joules/bit
+        E_elec = 9E-9 # Energy dissipation : electronics Joules/bit
         E_amp = 100E-12 # Energy dissipation : power amplifier J/bit/m2
         E_ini = 0.5E-5 # energy for starting up radio in joules
         T_tranON = 2450E-6 # Time duration sleep -> idle
@@ -45,11 +46,11 @@ class Energy :
         T_read = 565E-6 # Time duration : flash reading
         E_actu = 0.02E-3 # Energy dissipation : actuation
 
-        d = 800 # TODO distance from from node to base station. for now consider it as constant. later we have to calculate distance base on node and base station location
-
+        d = dist # 800 # TODO distance from from node to base station. for now consider it as constant. later we have to calculate distance base on node and base station location
+        # print("dist is {}".format(d))
         EnergySensing = numberOfBitsPerSample * V_sup * I_sens * T_sens
         # EnergyDataLogging = b * V_sup * ((I_write*T_write) + (I_read * T_read))
-        EnergyTransmit = (b_transmit*E_elec) + (b_transmit * (d^2) * E_amp) + E_ini # check 'd' -> distance
+        EnergyTransmit = (b_transmit*E_elec) + (b_transmit * d*d * E_amp) + E_ini # check 'd' -> distance
 
         # CN = (T_tranON + T_A +T_tranOFF) / (T_tranON+ T_A + T_tranOFF + T_S) # Duty cycle for sensor node
         # EnergyTransient = T_A*V_sup *(CN*I_A + (1-CN) * I_S)
@@ -59,7 +60,16 @@ class Energy :
         # totalEnergyConsumed = EnergySensing + EnergyDataLogging + EnergyTransmit # + EnergyTransient #for now lets ignore this - cause duty cycle may change with sampling time
         EnergySensingPerRound = EnergySensing * numberOfSamples
 
-        return EnergySensingPerRound*100,EnergyTransmit*1000
+        #Compensating Energy for both sensing and transmitting
+        EnergySensingPerRound = EnergySensingPerRound*100
+        EnergyTransmit  = EnergyTransmit * 1000
+
+        timeToTransmitData = b_transmit/self.txRate
+        txEnergyInwatts = EnergyTransmit * timeToTransmitData
+
+        return EnergySensingPerRound,EnergyTransmit,txEnergyInwatts
+
+
          
 if __name__ == '__main__' :
     e = Energy()

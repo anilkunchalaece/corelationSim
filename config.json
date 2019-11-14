@@ -1,7 +1,8 @@
 {
     "numberOfNodes" : 23,
     "gridSize" : 100,
-    "nodeInitEnergy" : 10,
+    "nodeInitEnergy" : 2,
     "nodeInitSamplingRate" : 120,
+    "TxRate" : 250000,
     "nodeUpSamplingRate" : "1T"
 }

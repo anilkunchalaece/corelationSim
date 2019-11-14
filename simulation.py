@@ -2,9 +2,12 @@ from dataProcess import Data
 from energy import Energy
 from network import Network
 from node import Node
+from propagationModel import Propogation
+
 import os,json
 import datetime
 import numpy as np
+from numpy import sqrt,square
 from collections import Counter
 
 configFileLoc = os.path.join(os.getcwd(), 'config.json')
@@ -162,6 +165,15 @@ def getNodeObj(nodeId,nodeObjList) :
         if obj.nodeId == nodeId :
             return obj
 
+#get distance from basestation to the node
+def getDistance(nodeObj,baseCoor) :
+    nodeX = nodeObj.xPos
+    nodeY = nodeObj.yPos
+    baseX , baseY = baseCoor[0] , baseCoor[1]
+
+    dist = sqrt(square(baseY-nodeY) + square(baseX - nodeX))
+    return dist
+
 def runSimulation(nodeInitSamplingRate,roundTime,RESULTS_FILE_NAME,withoutCorr=False) :
     conf = loadConfig()
 
@@ -175,8 +187,12 @@ def runSimulation(nodeInitSamplingRate,roundTime,RESULTS_FILE_NAME,withoutCorr=F
     # print("###### Generating the network using uniform distribution ")
     net = Network(conf['numberOfNodes'],conf['gridSize'],conf['nodeInitEnergy'],nodeInitSamplingRate)
     randNet = net.generateRandomNetwork(usePrevNodes=USE_PREV_NODES)
-    e = Energy()
+    baseCoOr = net.getBaseStationCoOrdinates()
+    e = Energy(conf['TxRate'])
     # net.plotNetwork(randNet)
+
+    #propagation model
+    p = Propogation()
 
     ###### Simulation starts from HERE #########
     numberOfRounds = int(totalSimulationDuration / roundTime) - 2
@@ -215,9 +231,13 @@ def runSimulation(nodeInitSamplingRate,roundTime,RESULTS_FILE_NAME,withoutCorr=F
                 # if eachSampleTime == 1 :
                 #     print(nextSampleTime)
             #update the energy of node
-            sensingEnergy,transmitEnergy = e.energyConsumptionHalgamuge(NUMBER_OF_BITS_PER_SAMPLE,numberOfSamplesPerRound)
+            dist = getDistance(nodeNumber,baseCoOr)
+            sensingEnergy,transmitEnergy,txEnergyInwatts = e.energyConsumptionHalgamuge(NUMBER_OF_BITS_PER_SAMPLE,numberOfSamplesPerRound,dist)
             totalEnergy = sensingEnergy + transmitEnergy
             nodeNumber.updateEnergy(totalEnergy)
+
+            #calculate rxPower at baseStation for each node
+            powerAtRx = p.rayleighFadingAndLogNormalShadowing(txEnergyInwatts,dist)
 
             #get the node data for this round
             nodeData[nodeNumber.nodeId] = {
@@ -226,6 +246,8 @@ def runSimulation(nodeInitSamplingRate,roundTime,RESULTS_FILE_NAME,withoutCorr=F
                 'sensingEnergy' : sensingEnergy, #energy consumed for sensor sensing and sampling per round
                 'transmitEnergy' : transmitEnergy, #energy consumed for trasitting the data per round
                 'remainingEnergy' : nodeNumber.energy, # remaining energy for node
+                'txEnergyInwatts' : txEnergyInwatts,
+                'powerAtRx' : powerAtRx
             }
             # print('for node {} sampling rate {} number of samples are {}'.format(nodeNumber.nodeId,nodeNumber.samplingRate,len(temp_l)))
             matrix_M.append(temp_l)
